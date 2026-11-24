@@ -2,7 +2,7 @@
 
 Code, simulation inputs and analysis datasets accompanying:
 
-**Paper:** [Insert full paper title and DOI]
+**Paper:** "In silico shading captures the field-observed relationship between incoming radiation and grain number in wheat" (under revision at European Journal of Agronomy) 
 
 This repository contains Python and Bash scripts for APSIM Next Generation shading experiments, including simulation setup, data processing, statistical analyses, and generation of the published figures and tables.
 
