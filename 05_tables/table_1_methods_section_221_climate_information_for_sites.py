@@ -80,7 +80,7 @@ def read_met_file(path):
 
 
 def load_climate_data(folder):
-    paths = sorted(glob.glob(os.path.join(folder, "*.met")))
+    paths = sorted(glob.glob(os.path.join(folder, "*.sim")))
     if not paths:
         raise FileNotFoundError(f"No .met files found in {folder}")
 
@@ -129,7 +129,7 @@ def build_table(df):
 
 
 def main():
-    df = load_climate_data(cfg.SHADING_MET_FILES_WITH_CO2)
+    df = load_climate_data(cfg.EXAMPLE_DATA_FILES_DIR)
     print(f"Years: {df['YEAR'].min()}-{df['YEAR'].max()}")
 
     table = build_table(df)
