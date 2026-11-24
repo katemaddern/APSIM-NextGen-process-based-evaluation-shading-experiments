@@ -1,4 +1,4 @@
-# APSIM Next Generation: Process-based evaluation grain number determination using shading experiments
+# Process-based evaluation of grain number determination in APSIM Next Generation using shading experiments
 
 Code, simulation inputs and analysis datasets accompanying:
 
