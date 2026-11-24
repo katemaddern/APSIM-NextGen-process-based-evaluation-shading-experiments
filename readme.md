@@ -163,7 +163,22 @@ Some Bash scripts contain hard-coded `CONFIG_PATH` references. These must be upd
 
 ### 3.3 Install APSIM Next Generation
 
-The simulations used APSIM Next Generation version `2026.09.8109.0`, installed in a Singularity container.
+This paper used APSIM Next Generation version `2026.09.8109.0`, installed in a Singularity container. Here is how to set up iyour own APSIM singluarity container (ideal where you don't have root/sudo/docker permissions) 
+[1] TO SET UP APSIM CONTAINER:
+
+how to set up apsim container _ *need to check that URL is public or move into this directory * ALL RAN FROM THE LINUX TERMINAL/COMMAND LINE:
+1. cd $APSIM_CONTAINER_DIR
+2. run this from the command line: curl -o apsim.Singularity https://raw.githubusercontent.com/katemaddern/apsim/refs/heads/main/Singularity.2026.09.8109.0
+3. run this from the command line: ls -> should see a new file called 'apsim.Singularity'
+4. run this from the command line: singularity build --remote $APSIM_CONTAINER_DIR/apsim_2026_09_8109_0.sif apsim.Singularity
+5. If first time set up or it has been a while:
+     Step 5a: If it has been a while it will prompt about an ‘expired token’ for sys labs. If that is the case, run this from the terminal: singularity remote login
+     Step 5b: Then go to: https://cloud.sylabs.io/auth/tokens (login with github). Then head to ‘Access Tokens’, ‘Create New Tokens’, call it something and then copy the token (it’s about 4 lines long and you only get one chance to access it).
+     Step 5c: Paste this token into the terminal and it should accept it. Then rerun the command from step 4 – this might take a while and if it works the final line will say ‘INFO: Image uploaded successfully.’
+
+Finish/6. After running step 4, it should build the container - you'll see a lot of lines of Unpacking, Selecting, Preparing, Setting up, Installing, Certificate added and so on. If it has worked, the final line will say ‘INFO: Image uploaded successfully.’ and then eventually the job will end on the command line
+
+Full credit to James Bristow (https://github.com/JBris) for the code to install APSIM NextGen as a singularity container. Original version that I modified available here: https://github.com/JBris/auto-apsim-singularity/blob/fa59b91b3fce2d1a2d0133727c1355a8a8d323a5/templates/Singularity.template
 
 From the configured container directory:
 
