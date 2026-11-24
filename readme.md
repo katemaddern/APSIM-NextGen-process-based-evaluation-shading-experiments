@@ -6,8 +6,7 @@ Code, simulation inputs and analysis datasets accompanying:
 
 This repository contains Python and Bash scripts for APSIM Next Generation shading experiments, including simulation setup, data processing, statistical analyses, and generation of the published figures and tables.
 
-APSIM Next Generation citation:
-
+APSIM Next Generation citation and acknowledgments:
 Holzworth, Dean, N. I. Huth, J. Fainges, H. Brown, E. Zurcher, R. Cichota, S. Verrall, N. I. Herrmann, B. Zheng, and V. Snow. “APSIM Next Generation: Overcoming Challenges in Modernising a Farming Systems Model.” Environmental Modelling & Software 103 (May 1, 2018): 43–51. https://doi.org/10.1016/j.envsoft.2018.02.002. 
 Acknowledgment is made to the APSIM Initiative which takes responsibility for quality assurance and a structured innovation program for APSIM’s modelling software, which is provided free for research and development use (see www.apsim.info for details)
 
