@@ -84,6 +84,12 @@ RAW_DAILY_DIR = Path(cfg.SHADING_RAW_DATA_PARQUET_DIR)   # one parquet file per 
 RAW_RADN_COL = 'WEATHER_RADN'                          # daily radiation column after formatting
 WINDOW_DAYS = 14                                       # expected days per shading window
 VERBOSE_RAW = False                                    # True = print every raw file as it is processed
+# Copy of the daily control radiation, saved so Figure 1 can be remade without the raw files.
+# Raw files found  -> radiation read from them and this file (over)written.
+# Raw files absent -> radiation read from this file.
+CONTROL_RAD_FILE = Path(cfg.ANALYSIS_DATA_FILES_IN_SCRIPTS_DIR) / f'control_daily_radiation_{CULTIVAR}.parquet'
+SAVE_CONTROL_RAD = True        # False = never overwrite CONTROL_RAD_FILE
+
 SHIFT_COL = pf.X_COL           # thermal time from anthesis to the middle of the window
 ALPHA = pf.ALPHA
 MIN_YEARS = pf.MIN_YEARS
@@ -186,7 +192,7 @@ def load_apsim():
     shaded = shaded.dropna(subset=[SHIFT_COL, RESPONSE])
     shaded['SHIFT_BIN'] = pf.dd_bin(shaded[SHIFT_COL])
     if RAD_SOURCE == 'control':
-        shaded[RAD_COL] = control_window_radiation(shaded, load_control_daily())
+        shaded[RAD_COL] = control_window_radiation(shaded, get_control_daily())
         both = shaded[[RAD_COL, 'MEAN_RADIATION_INCOMING_SHADING_PERIOD']].dropna()
         print(f'Radiation over the shading windows (MJ m-2 d-1): control mean {both[RAD_COL].mean():.2f}, '
               f'shaded-run mean {both["MEAN_RADIATION_INCOMING_SHADING_PERIOD"].mean():.2f}')
@@ -271,6 +277,26 @@ def load_control_daily():
           f'{daily.groupby(["SITE", "YEAR"]).ngroups} site-years, {len(daily)} days')
     return daily
 
+def get_control_daily():
+    """Daily control radiation: from the raw files if present (and saved to CONTROL_RAD_FILE),
+    otherwise from CONTROL_RAD_FILE."""
+    raw_found = RAW_DAILY_DIR.is_dir() and any(RAW_DAILY_DIR.glob(f'*_control_*_{CULTIVAR}.parquet'))
+    if raw_found:
+        print(f'Control radiation: reading raw daily files in {RAW_DAILY_DIR}')
+        daily = load_control_daily()
+        if SAVE_CONTROL_RAD:
+            CONTROL_RAD_FILE.parent.mkdir(parents=True, exist_ok=True)
+            daily.to_parquet(CONTROL_RAD_FILE, index=False)
+            print(f'Control radiation: saved {len(daily)} days to {CONTROL_RAD_FILE}')
+        return daily
+    if CONTROL_RAD_FILE.is_file():
+        print(f'Control radiation: raw files not found, using the saved file {CONTROL_RAD_FILE}')
+        daily = pd.read_parquet(CONTROL_RAD_FILE)
+        print(f'Control radiation: {daily.groupby(["SITE", "YEAR"]).ngroups} site-years, {len(daily)} days')
+        return daily
+    raise FileNotFoundError(f'No control radiation: no raw files *_control_*_{CULTIVAR}.parquet in '
+                            f'{RAW_DAILY_DIR}, and no saved file {CONTROL_RAD_FILE}. '
+                            "Set RAD_SOURCE = 'shaded' to use the shaded runs' radiation instead.")
 
 def control_window_radiation(shaded, daily):
     """Mean daily control radiation over each shaded run's window, START_SHADING_DOY to
