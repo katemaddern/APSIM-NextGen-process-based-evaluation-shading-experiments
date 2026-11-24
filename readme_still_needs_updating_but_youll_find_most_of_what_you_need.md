@@ -1,0 +1,248 @@
+# APSIM Next Generation: Process-based evaluation of shading experiments
+
+Code, simulation inputs and analysis datasets accompanying:
+
+**Paper:** [Insert full paper title and DOI]
+
+This repository contains Python and Bash scripts for APSIM Next Generation shading experiments, including simulation setup, data processing, statistical analyses, and generation of the published figures and tables.
+
+## How to use this repository
+
+| Pathway | Purpose | Requirements |
+|---|---|---|
+| **1. Understand the paper** | Explore the experimental design, model inputs, analysis and statistical methods | None |
+| **2. Reproduce figures and tables** | Regenerate published results using the supplied datasets | Python environment |
+| **3. Run the full pipeline** | Recreate meteorological inputs, run APSIM simulations and process outputs | Linux HPC, Slurm, Python, Singularity/Apptainer, APSIM Next Generation |
+
+---
+
+## 1. Understand the paper
+
+The repository is organised as follows:
+
+```text
+├── 01_shading_experiment/
+│   ├── 00_data_files/
+│   ├── 01_met_file_processing/
+│   ├── 02_simulation_set_up/
+│   └── 03_data_processing/
+├── 02_dryland_shading_experiment/
+│   ├── 00_data_files/
+│   ├── 02_simulation_set_up/
+│   └── 03_data_processing/
+├── 03_data_files_for_figures_and_tables/
+├── 04_figures/
+├── 05_tables/
+├── config.sh
+├── config_loader.py
+└── paper_1_functions.py
+```
+
+**Key files:**
+
+- `01_shading_experiment/` — meteorological processing, simulation setup and output processing for the main shading experiment.
+- `02_dryland_shading_experiment/` — equivalent workflow under rainfed conditions.
+- `00_data_files/` — example APSIM simulation files (`.apsimx`), meteorological inputs and supporting data.
+- `04_figures/` — individual scripts generating the paper's figures and supplementary figures.
+- `05_tables/` — individual scripts generating the paper's tables and supplementary tables.
+- `paper_1_functions.py` — shared plotting functions, statistical tests and analysis settings.
+- `config.sh` — central paths and workflow parameters.
+
+**Statistical analyses:** The statistical methods are implemented within the individual figure/table scripts and shared functions. These include paired comparisons, confidence intervals, Wilcoxon signed-rank tests, Holm corrections and mixed-effects modelling where applicable.
+
+## 2. Reproduce the figures and tables
+
+This pathway uses the published datasets and does **not** require APSIM, Singularity/Apptainer or an HPC cluster.
+
+### 2.1 Download the repository
+
+```bash
+git clone https://github.com/katemaddern/APSIM-NextGen-process-based-evaluation-shading-experiments.git
+
+cd APSIM-NextGen-process-based-evaluation-shading-experiments
+git lfs pull
+```
+
+Git LFS is required to retrieve the two large parquet datasets.
+
+### 2.2 Set up Python
+
+Create and activate a Python environment with the required analysis packages. The repository includes a micromamba environment YAML under `01_shading_experiment/00_data_files/`.
+
+**Note:** The environment is still being minimised and tested for independent figure/table reproduction.
+
+### 2.3 Configure paths
+
+Edit `config.sh` to match your computer.
+
+The repository path (`SCRIPTS_BASE`), scratch/data location (`SCRATCH_BASE`) and output location (`PROJECTS_ROOT`) must resolve to accessible directories.
+
+The Python scripts load this configuration through `config_loader.py`.
+
+### 2.4 Input datasets
+
+The supplied files in `03_data_files_for_figures_and_tables/` include:
+
+- `shading_experiment_all_sites_limited_variables_for_upload.parquet`
+- `dryland_shading_experiment_all_sites_limited_variables_for_upload.parquet`
+- Digitised Fischer (1985) grain-number, radiation and trend-line data
+- Fischer daily temperature and radiation data
+- Saved control-radiation data for Figure 1
+
+The figure scripts use the full processed datasets when available and otherwise use the reduced datasets where supported.
+
+Figure 1 uses raw daily control radiation when available, otherwise the supplied saved radiation dataset. Table 1 reads the supplied example weather files in `01_shading_experiment/00_data_files/`.
+
+### 2.5 Generate figures and tables
+
+Individual scripts are located in:
+
+```text
+04_figures/
+05_tables/
+```
+
+Run scripts individually, for example:
+
+```bash
+python 04_figures/fig_7_dryland_vs_irrigated.py
+```
+
+Figure 1 also supports `--quick` for testing, but this mode should not be used to reproduce the published analysis.
+
+The scripts write figures, tables and associated statistical outputs to the configured output directory, principally `SECOND_DRAFT_DIR`.
+
+The supplied `01_submit_all_figures.sh` and `01_submit_all_tables.sh` are designed for Slurm; users without Slurm should run the Python scripts directly.
+
+---
+
+## 3. Run the complete APSIM pipeline
+
+This workflow was developed for a Linux HPC cluster using Slurm. Scripts are written in Python and Bash.
+
+The original cluster inherited the active micromamba environment when jobs were submitted. Submission scripts do not independently activate the environment, so this behaviour must be checked on other clusters.
+
+### 3.1 Requirements
+
+- Linux HPC system with Slurm, or adapted job-submission scripts
+- Python/micromamba environment
+- Singularity/Apptainer installed separately from the Python environment
+- APSIM Next Generation **2026.09.8109.0**
+- Sufficient scratch storage for simulation outputs and intermediate datasets
+
+### 3.2 Configure directories
+
+Edit `config.sh` to define:
+
+```bash
+SCRIPTS_BASE
+SCRATCH_BASE
+DATA_BASE
+PROJECTS_ROOT
+PROJECTS_BASE
+```
+
+All remaining working directories are derived from these variables.
+
+The workflow uses separate locations for:
+
+- Repository scripts and supplied example files
+- Scratch storage for meteorological files, APSIM simulations and intermediate processing
+- Project storage for analysis outputs and figures
+
+Create the directories specified in `config.sh` before running the pipeline.
+
+**TODO:** Provide an automated directory-setup script.
+
+Some Bash scripts contain hard-coded `CONFIG_PATH` references. These must be updated to the local repository location before execution.
+
+### 3.3 Install APSIM Next Generation
+
+The simulations used APSIM Next Generation version `2026.09.8109.0`, installed in a Singularity container.
+
+From the configured container directory:
+
+```bash
+cd "$APSIM_CONTAINER_DIR"
+
+curl -L -o apsim.Singularity \
+  https://raw.githubusercontent.com/katemaddern/apsim/refs/heads/main/Singularity.2026.09.8109.0
+
+singularity build --remote \
+  "$APSIM_CONTAINER_SIF" apsim.Singularity
+```
+
+Remote builds may require authentication through [Sylabs Cloud](https://cloud.sylabs.io/).
+
+The container recipe was adapted from [James Bristow's auto-apsim-singularity project](https://github.com/JBris/auto-apsim-singularity).
+
+**TODO:** Verify the public container recipe and installation procedure.
+
+### 3.4 Prepare input data
+
+The supplied `00_data_files/` directories contain example simulation templates and supporting inputs.
+
+Data sources include:
+
+- **Meteorological data:** [SILO point data](https://www.longpaddock.qld.gov.au/silo/point-data/), including Lameroo station 025590 (downloaded 29 September 2026).
+- **Atmospheric CO₂:** [CSIRO Kennaook/Cape Grim observations](https://www.csiro.au/en/research/natural-environment/atmosphere/latest-greenhouse-gas-data) (downloaded 29 September 2026).
+- **Soil profiles:** APSOIL-derived inputs used in the supplied APSIM templates.
+- **Experimental observations:** Digitised Fischer (1985) data supplied in `03_data_files_for_figures_and_tables/`.
+
+**TODO:** Document exact APSOIL profile identifiers, especially Lameroo, and any modifications to the original soil profiles.
+
+Copy the required example meteorological and APSIM files into the corresponding working directories defined in `config.sh`.
+
+The supplied `.apsimx` templates contain machine-specific meteorological file paths. These must be replaced with absolute paths accessible inside the APSIM container.
+
+### 3.5 Execute the workflow
+
+The numbered scripts indicate the intended processing order.
+
+**Main shading experiment:**
+
+| Stage | Directory | Purpose |
+|---|---|---|
+| 1 | `01_met_file_processing/` | Prepare meteorological files, add CO₂ observations and apply radiation shading |
+| 2 | `02_simulation_set_up/` | Check templates, replicate simulations and submit APSIM jobs |
+| 3 | `03_data_processing/` | Convert APSIM databases to parquet, validate and combine results |
+
+**Dryland shading experiment:**
+
+Use the corresponding scripts in `02_dryland_shading_experiment/`, beginning with simulation setup and continuing through data processing.
+
+Slurm submission scripts are generally named `*submit*.sh`. Follow the numbered sequence and review job resources, partition names and environment settings for your cluster.
+
+**Important manual checkpoint:** After running the initial APSIM template checks, inspect the simulation outputs before copying the validated templates into the `apsimx_templates_for_duplication/` working directory. This step is deliberately not automated.
+
+The workflow subsequently generates simulation manifests, runs APSIM jobs, checks outputs, converts databases to parquet and combines processed results.
+
+The final datasets are used by the figure and table scripts described in Section 2.
+
+**TODO:** Verify the full execution sequence on a clean HPC installation and provide an automated setup/validation script.
+
+---
+
+## Reproducibility notes
+
+- The supplied limited parquet datasets are intended for reproducing the published analyses without rerunning the full simulations.
+- Raw daily APSIM outputs are not included in the repository.
+- The full simulation pipeline requires site-specific meteorological inputs, valid APSIM file paths and sufficient computing resources.
+- Some HPC-specific configuration and manual input preparation remain necessary.
+- The Python environment and full-pipeline setup are undergoing final reproducibility checks.
+
+## Citation and acknowledgements
+
+**Paper:** [Full citation and DOI]
+
+**Code:** [Zenodo DOI when available]
+
+APSIM Next Generation: [Software citation]
+
+Meteorological data: SILO, Queensland Government.
+
+Atmospheric CO₂ observations: CSIRO Kennaook/Cape Grim.
+
+APSIM container installation adapted from [James Bristow](https://github.com/JBris/auto-apsim-singularity).
+
+Additional references for crop development and critical-period definitions are identified in the analysis code.
