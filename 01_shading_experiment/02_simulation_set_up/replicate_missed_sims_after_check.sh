@@ -1,0 +1,22 @@
+#!/bin/bash
+#set -x
+
+# ---- Load shared path configuration ----
+CONFIG_PATH="$HOME/APSIM-NextGen-process-based-evaluation-shading-experiments/config.sh"
+source "$CONFIG_PATH"
+
+LOG_DIR="$SIMSETUP_SCRIPTS_DIR/logs/replicate__missed_sims"
+mkdir -p "$LOG_DIR"
+
+for insite in "${SITE_LIST[@]}"; do
+    echo "Running for site: $insite"
+    sbatch \
+        --partition=Short \
+        --time=8:00:00 \
+        --job-name=REP_${insite} \
+        --ntasks=1 \
+        --mem=30GB \
+        -e ${LOG_DIR}/%j_${insite}_test_error_%j.txt \
+        -o ${LOG_DIR}/%j_${insite}_test_output_%j.txt \
+        --wrap="echo Running on node: \$HOSTNAME at \$(date); python3 replicate_missed_sims_after_check.py ${insite} --list '$HOME/APSIM-NextGen-process-based-evaluation-shading-experiments/01_shading_experiment/02_simulation_set_up/problem_files_${insite}.txt'"
+done
